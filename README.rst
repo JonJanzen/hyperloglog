@@ -2,6 +2,8 @@
 Python implementation of the Hyper LogLog cardinality counter 
 algorithms.
 
+Using redis as the backing store
+
 ==================
 Hyper Log Log:
 --------------

@@ -3,15 +3,16 @@ This module implements probabilistic data structure which is able to calculate t
 """
 
 import math
-from hashlib import sha1            
+from hashlib import sha1
 from bisect import bisect_right
+from redis import Redis
 
 class HyperLogLog(object):
     """
     HyperLogLog cardinality counter
     """
 
-    def __init__(self, error_rate):
+    def __init__(self, error_rate, redis_host=None, redis_port=None, redis_db=None, redis_key=None):
         """
         Implementes a HyperLogLog
         
@@ -32,6 +33,33 @@ class HyperLogLog(object):
         self.m = 1 << b
         self.M = [ 0 for i in range(self.m) ]
         self.bitcount_arr = [ 1L << i for i in range(160 - b + 1) ]
+
+        if redis_host:
+            if not redis_port or not redis_db or not redis_key:
+                raise ValueError("missing redis_information")
+            # redis connection information
+            self.redis_host = redis_host
+            self.redis_port = redis_port
+            self.redis_db = redis_db
+            self.redis_key = redis_key
+            self.redis = Redis(redis_host, redis_port, redis_db)
+            if self.redis.exists(self.redis_key):
+                self.restore_from_redis()
+            else:
+                self.save_to_redis()
+
+    def save_to_redis(self):
+        if self.redis.exists(self.redis_key):
+            self.redis.delete(self.redis_key)
+        print(len(self.M))
+        self.redis.rpush(self.redis_key, *self.M)
+        print(len(self.M))
+
+    def restore_from_redis(self):
+        print 'getting range 0 - %d' % self.m
+        print len(self.M)
+        self.M = [int(x) for x in self.redis.lrange(self.redis_key, 0, self.m)]
+        print len(self.M)
 
     @staticmethod
     def _get_alpha(b):
@@ -71,6 +99,7 @@ class HyperLogLog(object):
         w = x >> self.b
 
         self.M[j] = max(self.M[j], self._get_rho(w, self.bitcount_arr))
+        self.save_to_redis()
 
 
     def update(self, *others):
@@ -83,6 +112,7 @@ class HyperLogLog(object):
                 raise ValueError('Counters precisions should be equal')
 
         self.M = list(max(*items) for items in zip(*([ item.M for item in others ] + [ self.M ])))
+        self.save_to_redis()
 
     
     def __eq__(self, other):
