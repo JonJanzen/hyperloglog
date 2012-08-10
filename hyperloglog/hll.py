@@ -53,15 +53,10 @@ class HyperLogLog(object):
     def save_to_redis(self):
         if self.redis.exists(self.redis_key):
             self.redis.delete(self.redis_key)
-        print(len(self.M))
         self.redis.rpush(self.redis_key, *self.M)
-        print(len(self.M))
 
     def restore_from_redis(self):
-        print 'getting range 0 - %d' % self.m
-        print len(self.M)
         self.M = [int(x) for x in self.redis.lrange(self.redis_key, 0, self.m)]
-        print len(self.M)
 
     @staticmethod
     def _get_alpha(b):
