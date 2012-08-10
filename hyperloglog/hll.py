@@ -35,8 +35,10 @@ class HyperLogLog(object):
         self.bitcount_arr = [ 1L << i for i in range(160 - b + 1) ]
 
         if redis_host:
-            if not redis_port or not redis_db or not redis_key:
+            if not redis_port or not redis_key:
                 raise ValueError("missing redis_information")
+            if not redis_db:
+                redis_db = 0
             # redis connection information
             self.redis_host = redis_host
             self.redis_port = redis_port
