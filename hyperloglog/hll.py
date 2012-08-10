@@ -96,7 +96,6 @@ class HyperLogLog(object):
         w = x >> self.b
 
         self.M[j] = max(self.M[j], self._get_rho(w, self.bitcount_arr))
-        self.save_to_redis()
 
 
     def update(self, *others):
